@@ -3,7 +3,9 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <ncurses.h>
-#include <assert.h>
+#include <curses.h>
+#include <time.h>
+#include <string.h>
 #define DELAY 1000
 
 typedef enum CELL_TYPE{
@@ -14,20 +16,32 @@ typedef enum CELL_TYPE{
     CELL_END,
 } CELL_TYPE;
 
+typedef enum DIRECTION{
+    NORTH,
+    SOUTH,
+    EAST,
+    WEST,
+} DIRECTION;
+
 int rows, cols;
 
 struct winsize getWinsize(int fd);
 void initBoard(int board[rows][cols]);
 void fillBoard(int board[rows][cols], int value);
 void initColorPairs();
-void createMaze(int board[rows][cols]);
 void showBoard(int board[rows][cols]);
+int getRand(int min, int max);
+int* pop(int* stack, int* slen);
+int getUnvisitedNeighbors(int board[rows][cols], int* current, int visited[rows * cols][2], int* vlen, int neighbors[4][2]);
+void computePath(int board[rows][cols]);
 
 int main(void){
+    srand(time(NULL));
 
     struct winsize win = getWinsize(STDOUT_FILENO);
     rows = win.ws_row;
     cols = win.ws_col;
+    printf("Board:\n\trows: %d\n\tcols: %d\n", rows, cols);
 
     int board[rows][cols];
     initBoard(board);
@@ -44,6 +58,14 @@ int main(void){
     return 0;
 }
 
+void computePath(int board[rows][cols]){
+    int explored[rows * cols][2];
+    int elen = 0;
+    explored[elen][0] = 0;
+    /* int queue[rows * cols][2]; */
+    /* int qlen = 0; */
+}
+
 struct winsize getWinsize(int fd){
     struct winsize win;
     ioctl(fd, TIOCGWINSZ, &win);
@@ -51,8 +73,7 @@ struct winsize getWinsize(int fd){
 }
 
 void initBoard(int board[rows][cols]){
-    fillBoard(board, CELL_EMPTY);
-    createMaze(board);
+    fillBoard(board, CELL_WALL);
 }
 
 void fillBoard(int board[rows][cols], int value){
@@ -77,8 +98,17 @@ void initColorPairs(){
     init_pair(CELL_END, COLOR_RED, COLOR_RED);
 }
 
-void createMaze(int board[rows][cols]){
 
+int* pop(int* stack, int* slen){
+    int* cell = malloc(sizeof(int) * 2);
+    cell[0] = *(stack + (*slen - 1) * 2 + 0);
+    cell[1] = *(stack + (*slen - 1) * 2 + 1);
+    *slen -= 1;
+    return cell;
+}
+
+int getRand(int min, int max){
+    return rand() % (max + 1 - min) + min;
 }
 
 void showBoard(int board[rows][cols]){
